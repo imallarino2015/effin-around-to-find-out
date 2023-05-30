@@ -1,5 +1,5 @@
-#ifndef BITMAP_H
-#define BITMAP_H
+#ifndef BMP_H
+#define BMP_H
 
 #include<iostream>
 #include<fstream>
@@ -275,4 +275,4 @@ void Bitmap::clear(){
 	}
 }
 
-#endif // BITMAP_H
+#endif // BMP_H
