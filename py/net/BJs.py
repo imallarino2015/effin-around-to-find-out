@@ -4,7 +4,7 @@ import json
 import requests
 
 
-def log_in(username, password) -> [requests.Session, dict]:
+def log_in(username: str, password: str) -> [requests.Session, dict]:
     session = requests.Session()
     login_headers = {
         'content-type': 'application/json'
@@ -120,7 +120,7 @@ def log_in(username, password) -> [requests.Session, dict]:
     return session, json.loads(response.content)
 
 
-def get_avail_offers(session) -> dict:
+def get_avail_offers(session: requests.Session) -> dict:
     offer_header = {
         'Content-Type': 'application/json',
         'Referer': 'https://www.bjs.com/',
@@ -143,7 +143,7 @@ def get_avail_offers(session) -> dict:
     return json.loads(response.content)
 
 
-def get_clipped_offers(session) -> dict:
+def get_clipped_offers(session: requests.Session) -> dict:
     offer_header = {
         'content-type': 'application/json',
     }
@@ -165,7 +165,7 @@ def get_clipped_offers(session) -> dict:
     return json.loads(response.content)
 
 
-def get_redeemed_offers(session) -> dict:
+def get_redeemed_offers(session: requests.Session) -> dict:
     offer_header = {
         'content-type': 'application/json',
     }
@@ -187,7 +187,7 @@ def get_redeemed_offers(session) -> dict:
     return json.loads(response.content)
 
 
-def clip_coupon(session, offer_id) -> dict:
+def clip_coupon(session: requests.Session, offer_id: str) -> dict:
     params = {
         "offerId": offer_id
     }
