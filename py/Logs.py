@@ -114,31 +114,25 @@ def call_with_logs(f: callable, logger: Logger) -> any:
 
 def retry(
         f: callable, logger: Logger,
-        retry_action: callable = None,
         expected_val: any = None,
+        retry_action: callable = lambda: None,
         retry_delay: float = 0, max_retries: int = 3
 ) -> any:
-    ret_val = None
     retries = 0
-    cont = True
-    while cont:
+    while True:
         try:
             ret_val = f()
             if expected_val is not None and ret_val != expected_val:
                 raise Exception("Unexpected value")
-            cont = False
+            return ret_val
         except Exception as e:
             if retries >= max_retries:
                 raise e
-            elif retry_action is not None:
-                retry_action()
-                logger.log_exception(e)
-            else:
-                logger.log_exception(e)
+            retry_action()
+            logger.log_exception(e)
             retries += 1
             time.sleep(retry_delay)
             print(f"Retrying: {retries}")
-    return ret_val
 
 
 system_logger = Logger()
