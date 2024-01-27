@@ -145,8 +145,6 @@ system_logger = Logger()
 
 
 def main():
-    system_logger.log_trace("asdf")
-    print(system_logger)
     return
 
 
