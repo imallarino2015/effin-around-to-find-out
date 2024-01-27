@@ -4,7 +4,7 @@ import json
 import requests
 
 
-def log_in_api(username, password):
+def log_in(username, password) -> [requests.Session, dict]:
     session = requests.Session()
     login_headers = {
         'content-type': 'application/json'
@@ -120,7 +120,7 @@ def log_in_api(username, password):
     return session, json.loads(response.content)
 
 
-def get_avail_offers_api(session):
+def get_avail_offers(session) -> dict:
     offer_header = {
         'Content-Type': 'application/json',
         'Referer': 'https://www.bjs.com/',
@@ -140,11 +140,10 @@ def get_avail_offers_api(session):
         data=json.dumps(offer_payload)
     )
     print(response)
-    print(response.content)
     return json.loads(response.content)
 
 
-def get_clipped_offers_api(session):
+def get_clipped_offers(session) -> dict:
     offer_header = {
         'content-type': 'application/json',
     }
@@ -166,7 +165,7 @@ def get_clipped_offers_api(session):
     return json.loads(response.content)
 
 
-def get_redeemed_offers_api(session):
+def get_redeemed_offers(session) -> dict:
     offer_header = {
         'content-type': 'application/json',
     }
@@ -188,7 +187,7 @@ def get_redeemed_offers_api(session):
     return json.loads(response.content)
 
 
-def clip_coupon(session, offer_id):
+def clip_coupon(session, offer_id) -> dict:
     params = {
         "offerId": offer_id
     }
@@ -198,12 +197,9 @@ def clip_coupon(session, offer_id):
 
 
 def main():
-    credentials = {
-        "un": "",  # user username
-        "pw": ""  # user password
-    }
-    session, member_info = log_in_api(credentials["un"], credentials["pw"])
-    avail_offers = get_avail_offers_api(session)
+    credentials = json.load(open("config.json", "r"))  # {"un": <username>, "pw": <password>}
+    session, member_info = log_in(credentials["un"], credentials["pw"])
+    avail_offers = get_avail_offers(session)
     print(avail_offers[0]["currentCount"])
     for offer in avail_offers[0]["availableOffers"]:
         print(offer["offerId"])
