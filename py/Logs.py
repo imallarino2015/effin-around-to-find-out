@@ -13,10 +13,9 @@ class Logger:
     class Log:
         def __init__(
                 self, message: str, severity: str,
-                stacktrace=None, exception_type=None,
+                exception_type=None, stacktrace=None,
                 timestamp: datetime | None = None
         ):
-            self.working_dir = os.getcwd()
             self.timestamp = datetime.now() if timestamp is None else timestamp
             self.message = message
             self.severity = severity
@@ -24,11 +23,10 @@ class Logger:
             self.exception_type = exception_type
 
         def __str__(self):
-            return (
-                f"{self.timestamp} - {self.severity}:"
-                f"\n{self.message}" +
-                ('\n' + self.stacktrace if self.stacktrace is not None else '')
-            )
+            return f"{self.message}" + ('\n' + self.stacktrace if self.stacktrace is not None else '')
+
+        def __repr__(self):
+            return f"{self.timestamp} - {self.severity}:\n{self}"
 
         def __iter__(self):
             yield "timestamp", self.timestamp.isoformat()
@@ -44,8 +42,9 @@ class Logger:
             "Business Exception", "System Exception"
         ]
         self.minimum_print_severity = 1
+        self.working_dir = os.getcwd()
 
-    def log(self, *messages: str, sep: str = " ", severity: int = 1, stacktrace=None, exception_type=None):
+    def _log(self, *messages: str, sep: str = " ", severity: int = 1, exception_type=None, stacktrace=None):
         log = self.Log(
             sep.join([str(message) for message in messages]),
             self.severity_levels[severity],
@@ -56,32 +55,30 @@ class Logger:
             print(log)
 
     def log_trace(self, *messages: str, sep: str = " "):
-        self.log(*messages, sep=sep, severity=0)
+        self._log(*messages, sep=sep, severity=0)
 
     def log_info(self, *messages: str, sep: str = " "):
-        self.log(*messages, sep=sep, severity=1)
+        self._log(*messages, sep=sep, severity=1)
 
     def log_warning(self, *messages: str, sep: str = " "):
-        self.log(*messages, sep=sep, severity=2)
+        self._log(*messages, sep=sep, severity=2)
 
     def log_critical(self, *messages: str, sep: str = " "):
-        self.log(*messages, sep=sep, severity=3)
+        self._log(*messages, sep=sep, severity=3)
 
     def log_error(self, *messages: str, sep: str = " "):
-        self.log(*messages, sep=sep, severity=4)
+        self._log(*messages, sep=sep, severity=4)
 
     def log_business_exception(self, exception: Exception):
-        self.log(
-            str(exception), sep=" ",
-            severity=5,
+        self._log(
+            str(exception), sep=" ", severity=5,
             exception_type="Business Exception"
         )
 
     def log_system_exception(self, exception: Exception):
-        self.log(
-            str(exception), sep=" ",
-            severity=6, stacktrace=''.join(traceback.format_exception(exception)),
-            exception_type=f"System Exception - {exception}"
+        self._log(
+            str(exception), sep=" ", severity=6,
+            exception_type=f"System Exception - {exception}", stacktrace=''.join(traceback.format_exception(exception))
         )
 
     def log_exception(self, exception: Exception):
@@ -105,7 +102,7 @@ class Logger:
         return self.logs[idx]
 
     def __str__(self):
-        return str([str(log) for log in self.logs])
+        return str([repr(log) for log in self.logs])
 
 
 def call_with_logs(f: callable, logger: Logger) -> any:
@@ -144,7 +141,12 @@ def retry(
     return ret_val
 
 
+system_logger = Logger()
+
+
 def main():
+    system_logger.log_trace("asdf")
+    print(system_logger)
     return
 
 
