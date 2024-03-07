@@ -11,7 +11,7 @@ class NetworkError(Exception):
 
 
 # TODO: Find method of generating user agent (currently randomly selecting from list)
-def generate_user_agent():
+def generate_user_agent() -> str:
     user_agent_list = [
         # "Mozilla/5.0 (<system-information>) <platform> (<platform-details>) <extensions>"
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
@@ -27,7 +27,7 @@ def generate_user_agent():
     return user_agent
 
 
-def generate_headers(referer: str = None, **kwargs):
+def generate_headers(referer: str = None, **kwargs) -> dict:
     headers = {
         'Accept': '*',
         'Accept-Encoding': '*',
@@ -85,7 +85,7 @@ def download_file(
         retry: int = 3,
         timeout: int = None
 ) -> PIL.Image:
-    print("Collecting image from " + str(file_url))
+    print("Collecting file from " + str(file_url))
 
     for i in range(retry):
         try:
@@ -101,6 +101,10 @@ def download_file(
     print(str(response))
 
     if response.ok:
+        if "Content-Length" in response.headers:
+            print(f"File size: {int(response.headers['Content-Length']):,}")
+        else:
+            print("Content-Length not found")
         with open(file_path, "wb") as f:
             f.write(response.content)
         return file_path
