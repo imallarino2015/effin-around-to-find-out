@@ -23,6 +23,7 @@ class Logger:
             self.exception_type = exception_type
 
         def __str__(self):
+
             return f"{self.message}" + ('\n' + self.stacktrace if self.stacktrace is not None else '')
 
         def __repr__(self):
@@ -52,32 +53,32 @@ class Logger:
         )
         self.logs.append(log)
         if severity >= self.minimum_print_severity:
-            print(log)
+            print(log, "\033[0m")
 
     def log_trace(self, *messages: str, sep: str = " "):
-        self._log(*messages, sep=sep, severity=0)
+        self._log(sep.join([message for message in messages]), sep="", severity=0)
 
     def log_info(self, *messages: str, sep: str = " "):
-        self._log(*messages, sep=sep, severity=1)
+        self._log(sep.join([message for message in messages]), sep="", severity=1)
 
     def log_warning(self, *messages: str, sep: str = " "):
-        self._log(*messages, sep=sep, severity=2)
-
-    def log_critical(self, *messages: str, sep: str = " "):
-        self._log(*messages, sep=sep, severity=3)
+        self._log("\033[93m", sep.join([message for message in messages]), sep="", severity=2)
 
     def log_error(self, *messages: str, sep: str = " "):
-        self._log(*messages, sep=sep, severity=4)
+        self._log("\033[30m", "\033[41m", sep.join([message for message in messages]), sep="", severity=3)
+
+    def log_critical(self, *messages: str, sep: str = " "):
+        self._log("\033[31m", sep.join([message for message in messages]), sep="", severity=4)
 
     def log_business_exception(self, exception: Exception):
         self._log(
-            str(exception), sep=" ", severity=5,
+            "\033[30m", "\033[43m", str(exception), sep="", severity=5,
             exception_type="Business Exception"
         )
 
     def log_system_exception(self, exception: Exception):
         self._log(
-            str(exception), sep=" ", severity=6,
+            "\033[30m", "\033[41m", str(exception), sep="", severity=6,
             exception_type=f"System Exception - {exception}", stacktrace=''.join(traceback.format_exception(exception))
         )
 
@@ -139,6 +140,21 @@ system_logger = Logger()
 
 
 def main():
+    system_logger.log_trace("trace")
+    system_logger.log_info("info")
+    system_logger.log_warning("warning")
+    system_logger.log_error("error")
+    system_logger.log_critical("critical")
+
+    try:
+        raise BusinessException("Business exception")
+    except Exception as e:
+        system_logger.log_exception(e)
+
+    try:
+        raise Exception("System exception")
+    except Exception as e:
+        system_logger.log_exception(e)
     return
 
 
