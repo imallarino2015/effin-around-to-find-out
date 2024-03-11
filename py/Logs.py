@@ -53,7 +53,7 @@ class Logger:
         )
         self.logs.append(log)
         if severity >= self.minimum_print_severity:
-            print(log, "\033[0m")
+            print(log, "\033[0m", sep="")
 
     def log_trace(self, *messages: str, sep: str = " "):
         self._log(sep.join([message for message in messages]), sep="", severity=0)
