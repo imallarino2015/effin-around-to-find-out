@@ -39,7 +39,7 @@ class Logger:
     def __init__(self):
         self.logs = []
         self.severity_levels = [
-            "Trace", "Info", "Warning", "Error", "Critical",
+            "Trace", "Info", "Warning", "Critical", "Error",
             "Business Exception", "System Exception"
         ]
         self.minimum_print_severity = 1
@@ -64,11 +64,11 @@ class Logger:
     def log_warning(self, *messages: str, sep: str = " "):
         self._log("\033[93m", sep.join([message for message in messages]), sep="", severity=2)
 
-    def log_error(self, *messages: str, sep: str = " "):
-        self._log("\033[30m", "\033[41m", sep.join([message for message in messages]), sep="", severity=3)
-
     def log_critical(self, *messages: str, sep: str = " "):
-        self._log("\033[31m", sep.join([message for message in messages]), sep="", severity=4)
+        self._log("\033[31m", sep.join([message for message in messages]), sep="", severity=3)
+
+    def log_error(self, *messages: str, sep: str = " "):
+        self._log("\033[30m", "\033[41m", sep.join([message for message in messages]), sep="", severity=4)
 
     def log_business_exception(self, exception: Exception):
         self._log(
