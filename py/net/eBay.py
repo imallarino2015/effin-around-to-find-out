@@ -126,8 +126,6 @@ def get_seller_info(name) -> dict:
 def main():
     config = json.load(open("config.json", "r"))
 
-    # log_in(config["username"], config["password"])
-
     with open("urls") as f:
         file_lines = [
             line.strip()
