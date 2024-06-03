@@ -43,6 +43,7 @@ class SteamGame(object):
         if self.get_game_link():
             # print("Link found")
             self.fetch_store_page()
+            # print(self.store_page)
 
             if self.name is None:
                 self.fetch_name()
@@ -144,6 +145,7 @@ class SteamGame(object):
         return None
 
     def fetch_price_info(self):
+        self.base_price, self.discount, self.final_price = ("", "0", "")
         self.update_store_page()
 
         game_area_purchase = self.store_page.find("div", attrs={"id": "game_area_purchase"})
@@ -171,17 +173,18 @@ class SteamGame(object):
         price_element = game_purchase_element.find("div", {"class": "game_purchase_price"})
         if price_element is not None:
             self.base_price = price_element.text.strip()
-            self.discount = "0"
             self.final_price = price_element.text.strip()
-            return None
+        else:
+            price_element = game_purchase_element.find("div", {"class": "game_purchase_discount"})
+            if price_element is not None:
+                self.base_price = price_element.find("div", attrs={"class", "discount_original_price"}).text.strip()
+                self.discount = price_element.find("div", attrs={"class", "discount_pct"}).text.strip()
+                self.final_price = price_element.find("div", attrs={"class", "discount_final_price"}).text.strip()
 
-        price_element = game_purchase_element.find("div", {"class": "game_purchase_discount"})
-        if price_element is not None:
-            self.base_price = price_element.find("div", attrs={"class", "discount_original_price"}).text.strip()
-            self.discount = price_element.find("div", attrs={"class", "discount_pct"}).text.strip()
-            self.final_price = price_element.find("div", attrs={"class", "discount_final_price"}).text.strip()
-            return None
-
+        self.base_price = float(self.base_price.replace("$", "").strip())
+        self.discount = float(self.discount.replace("%", "").strip())
+        self.final_price = float(self.final_price.replace("$", "").strip())
+        # TODO: get currency type
         return None
 
     def fetch_platforms(self):
@@ -254,28 +257,24 @@ class SteamGame(object):
 
         return None
 
-    def to_dict(self):
-        game_dict = {
-            "Game Name":                self.name,
-            "ID":                       self.id,
-            "Link":                     self.link,
-            "Base Price":               self.base_price,
-            "Early Access":             self.is_early_access,
-            "Steam Deck Compatibility": self.sd_compatibility,
-            "Has Demo":                 self.has_demo,
-            "Discount %":               self.discount,
-            "Final Price":              self.final_price,
-            "Bundles":                  self.bundles,
-            "Platforms":                self.platforms,
-            "Publish Date":             self.publish_date,
-            "Overall Review":           self.review_total,
-            "Recent Review":            self.review_recent
-        }
-
-        return game_dict
+    def __iter__(self):
+            yield "Game Name",                self.name
+            yield "ID",                       self.id
+            yield "Link",                     self.link
+            yield "Base Price",               self.base_price
+            yield "Early Access",             self.is_early_access
+            yield "Steam Deck Compatibility", self.sd_compatibility
+            yield "Has Demo",                 self.has_demo
+            yield "Discount %",               self.discount
+            yield "Final Price",              self.final_price
+            yield "Bundles",                  self.bundles
+            yield "Platforms",                self.platforms
+            yield "Publish Date",             self.publish_date
+            yield "Overall Review",           self.review_total
+            yield "Recent Review",            self.review_recent
 
     def __str__(self):
-        game_details = self.to_dict()
+        game_details = dict(self)
         return "\n".join([
             str(key) + ": " + str(game_details[key])
             for key
