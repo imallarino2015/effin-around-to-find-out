@@ -8,7 +8,7 @@ import os
 import requests
 import bs4
 
-import WebAutomation.RequestHelper as RequestHelper
+from WebAutomation import RequestHelper
 
 
 class Post:
