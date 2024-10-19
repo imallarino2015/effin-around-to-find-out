@@ -2,7 +2,6 @@ import os
 import time
 from datetime import datetime
 import traceback
-from inspect import stack
 
 
 class BusinessException(Exception):
@@ -99,14 +98,14 @@ class Logger:
         self._log(
             str(exception), sep="", severity=5,
             exception_type=type(exception).__name__,
-            stacktrace=''.join(traceback.format_exception(exception))
+            stacktrace=''.join(traceback.format_exception(exception)).strip()
         )
 
     def log_system_exception(self, exception: Exception):
         self._log(
             str(exception), sep="", severity=6,
             exception_type=type(exception).__name__,
-            stacktrace=''.join(traceback.format_exception(exception))
+            stacktrace=''.join(traceback.format_exception(exception)).strip()
         )
 
     def log_exception(self, exception: Exception):
@@ -127,20 +126,110 @@ class Logger:
     def __str__(self):
         return "\n".join([str(log) for log in self.logs])
 
+def log_message(
+    message: str | Exception, logger: Logger | None = None,
+    severity: int = 1, raise_exception: bool | None = None
+) -> None:
+    """
+    :param message: message string or exception to be logged
+    :param logger: logger object
+    :param severity: severity of message (if not exception)
+    :param raise_exception: How exceptions are handled;
+        None: bubbles up exceptions only if there is no logger provided;
+        True: bubbles up any exception;
+        False: never bubbles up exceptions
+    :return: None
+    """
+    if type(message) is str:
+        if logger is None:
+            print(message)
+        else:
+            logger._log(message, severity=severity)
+        return
+
+    if issubclass(type(message), Exception):
+        if raise_exception or (raise_exception is None and logger is None):
+            raise message
+
+        if logger is None:
+            print(message)
+            return
+
+        try:
+            raise message
+        except Exception as e:
+            logger.log_exception(e)
+        return
+
+    message_err_str = f"Unknown message type: {type(message).__name__}"
+    message_val_err = ValueError(message_err_str)
+    if raise_exception or (raise_exception is None and logger is None):
+        raise message_val_err
+
+    if logger is None:
+        print(message_err_str)
+        return
+
+    try:
+        raise message_val_err
+    except Exception as e:
+        logger.log_exception(e)
+    return
+
 
 def call_with_logs(f: callable, logger: Logger) -> any:
+    """
+    Calls the provided function with wrapping logs to indicate that the function has started or ended
+    :param f: function being wrapped
+    :param logger: logger object
+    :return: the value that is returned by f
+    """
     logger.log_info(f"{f.__name__} called")
     ret_val = f()
     logger.log_info(f"{f.__name__} ended")
     return ret_val
 
 
+def benchmark(
+    f: callable, logger: Logger | None = None,
+    expected_val: any = None
+) -> None:
+    """
+    A wrapping function timer and value checker for benchmarking the speed and expected i/o of a given function.
+    :param f: function being wrapped
+    :param logger: logger object
+    :param expected_val: value that is expected from the function; None is ignored
+    :return: None
+    """
+    log_message(f"{f.__name__} called", logger=logger)
+    begin_time = datetime.now()
+    result = f()
+    end_time = datetime.now()
+    log_message(f"{f.__name__} finished", logger=logger)
+
+    if expected_val is not None and expected_val != result:
+        log_message(ValueError(f"'{result}' was not the expected value of '{expected_val}'."), logger=logger)
+
+    log_message(f"{end_time-begin_time} taken to execute", logger=logger)
+    return
+
+
 def retry(
-        f: callable, logger: Logger | None = None,
-        expected_val: any = None,
-        retry_action: callable = lambda: None,
-        retry_delay: float = 0, max_retries: int = 3
+    f: callable, logger: Logger | None = None,
+    expected_val: any = None,
+    retry_action: callable = lambda: None,
+    retry_delay: float = 0, max_retries: int = 3
 ) -> any:
+    """
+    Retries any wrapped function in an attempt to avoid bubbling up an error
+    :param f: function being wrapped
+    :param logger: logger object
+    :param expected_val: value that is expected to be returned; None is ignored
+    :param retry_action: function executed when a retry is required
+    :param retry_delay: delay between retries
+    :param max_retries: maximum number of retries before bubbling up error
+    :return: the value that is returned by f
+    """
     retries = 0
     while True:
         try:
@@ -156,7 +245,7 @@ def retry(
                 logger.log_exception(e)
             retries += 1
             time.sleep(retry_delay)
-            print(f"Retrying: {retries}")
+            log_message(f"Retrying: {retries}")
 
 
 system_logger = Logger()
@@ -188,6 +277,16 @@ def main():
         print(3 + "x")
     except Exception as e:
         system_logger.log_exception(e)
+
+    log_message("Log this")
+    log_message("Log this with the logger", logger=system_logger)
+    log_message("Log this, again", raise_exception=True)
+    log_message(UserWarning("Throw this"), logger=system_logger)
+    log_message(2, logger=system_logger)
+    log_message(2.0, raise_exception=False)
+    # log_message(Exception("Throw this, too"), logger=system_logger, raise_exception=True)
+
+    print(system_logger)
     return
 
 
