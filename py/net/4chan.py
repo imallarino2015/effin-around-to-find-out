@@ -86,9 +86,6 @@ class Post:
         # yield "backlinks",  self.backlinks
         yield "content",  self.content
         yield "image",  self.image
-        # yield "image_name", self.image_name
-        # yield "image_size", self.image_size
-        # yield "image_resolution", self.image_resolution
 
 
 class Thread:
