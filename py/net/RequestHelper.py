@@ -1,13 +1,37 @@
+import os
+
 import requests
 import random as rand
 
 import PIL.Image
 
 
+class Session(requests.Session):
+    def __init__(self):
+        super().__init__()
+        self.base_url = None
+
+    def request(self, method, url, *args, **kwargs):
+        joined_url = url if self.base_url is None else (self.base_url + url)
+        return super().request(method, joined_url, *args, **kwargs)
+
+
 class NetworkError(Exception):
     def __init__(self, response: requests.models.Response, message=None):
         self.args = (message, )
         self.response: requests.models.Response = response
+
+
+def parse_filesize(filesize_text: str) -> int | None:
+    match filesize_text.split(" "):
+        case [sig_fig, "GB"]:
+            return int(float(sig_fig) * 1E9)
+        case [sig_fig, "MB"]:
+            return int(float(sig_fig) * 1E6)
+        case [sig_fig, "KB"]:
+            return int(float(sig_fig) * 1E3)
+        case _:
+            return None
 
 
 # TODO: Find method of generating user agent (currently randomly selecting from list)
@@ -83,7 +107,8 @@ def download_file(
         headers: dict = None,
         cookies: dict = None,
         retry: int = 3,
-        timeout: int = None
+        timeout: int = None,
+        create_dir: bool = False
 ) -> PIL.Image:
     print("Collecting file from " + str(file_url))
 
@@ -105,6 +130,9 @@ def download_file(
             print(f"File size: {int(response.headers['Content-Length']):,}")
         else:
             print("Content-Length not found")
+        file_dir = "/".join(file_path.split("/")[:-1])
+        if create_dir and not os.path.exists(file_dir):
+            os.makedirs(file_dir)
         with open(file_path, "wb") as f:
             f.write(response.content)
         return file_path
@@ -145,6 +173,14 @@ async def download_file_async(
         raise NetworkError(response, f"Failed to load image. Status code: {response.status_code}")
     else:
         raise NetworkError(response, response.status_code)
+
+
+def check_response(response):
+    if response.ok:
+        print(response)
+        return response.content
+    else:
+        raise NetworkError(response, response.content)
 
 
 if __name__ == "__main__":
