@@ -105,6 +105,18 @@ class Thread:
     #     return self[-1].timestamp
 
     def save(self, local_path: str = os.getcwd()) -> None:
+        def save_image(image_url, image_local_path, exp_size):
+            print(image_url)
+            response = requests.get(image_url)
+            print(response)
+            # RequestHelper.download_file(image, full_image_path, True)
+            if response.ok:
+                open(full_image_path, "wb+").write(response.content)
+                return int(exp_size / 10) <= os.path.getsize(image_local_path)
+            if response.status_code == 429:
+                time.sleep(7)
+            return False
+
         thread_path = "".join([
             f"{local_path}/",
             f"{'' if self.board_title is None else (self.board_title.replace('/', '').strip() + '/')}",
@@ -133,10 +145,13 @@ class Thread:
 
             expected_size = RequestHelper.parse_filesize(image["size"])
             if not os.path.exists(full_image_path) or os.path.getsize(full_image_path) <= int(expected_size/10):
-                # RequestHelper.download_file(image, full_image_path, True)
-                with open(full_image_path, "wb+") as f:
-                    f.write(requests.get(image["url"]).content)
-                time.sleep(.5)
+                try:
+                    Logs.retry(
+                        lambda: save_image(image["url"], full_image_path, expected_size),
+                        expected_val=True
+                    )
+                except Exception as e:
+                    print(e)
 
         print(f"Thread {self.id} saved")
 
@@ -350,7 +365,7 @@ def update_format(local_path):
                 # expected_size = RequestHelper.parse_filesize(post["image"]["size"])
                 # END POST UPDATING CODE #
 
-            if thread_info_original != thread_info:
+            if thread_info_original != thread_info:  # TODO: create dict crawler to find differences
                 print([
                     (post["id"], post["image"])
                     for post
@@ -369,15 +384,19 @@ def update_format(local_path):
 
 def main():
     config = json.load(open("config.json", "r"))
-    boards = []
-    thread_urls = sum(sorted([
-        [
-            f"https://boards.4chan.org/{board}/thread/{thread_id}"
-            for thread_id in search(board)["threads"].keys()
-        ]
-        for board in boards
-    ], reverse=True), [])
-    # watch(thread_urls, local_path=config["local_path"])
+    thread_urls = [
+    ]
+
+    # boards = []
+    # thread_urls = sum(sorted([
+    #     [
+    #         f"https://boards.4chan.org/{board}/thread/{thread_id}"
+    #         for thread_id in search(board)["threads"].keys()
+    #     ]
+    #     for board in boards
+    # ], reverse=True), [])
+
+    watch(thread_urls, local_path=config["local_path"])
 
 
 if __name__ == "__main__":
