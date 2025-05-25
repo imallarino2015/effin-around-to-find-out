@@ -235,7 +235,7 @@ def retry(
         try:
             ret_val = f()
             if expected_val is not None and ret_val != expected_val:
-                raise Exception("Unexpected value")
+                raise ValueError(f"Unexpected value: {ret_val}")
             return ret_val
         except Exception as e:
             if retries >= max_retries:
